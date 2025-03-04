@@ -1,0 +1,60 @@
+﻿// Add these models to your schema.prisma file
+
+model Conversation {
+  id                String       @id @default(uuid())
+  title             String
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  repository        Repository?  @relation(fields: [repositoryId], references: [id])
+  repositoryId      String?
+  user              User         @relation(fields: [userId], references: [id])
+  userId            String
+  messages          Message[]
+  summary           String?      // Conversation summary created by LLM
+  vector            Bytes?       // Embedding vector for similarity search
+  metaData          Json?        @default("{}")
+  tasks             Task[]       // Associated tasks
+
+  @@map("conversations")
+  @@index([repositoryId])
+  @@index([userId])
+}
+
+model Message {
+  id                String       @id @default(uuid())
+  content           String
+  role              String       // 'user', 'assistant'
+  createdAt         DateTime     @default(now())
+  conversation      Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId    String
+  referencedFiles   MessageFileReference[]
+  vector            Bytes?       // Embedding vector for similarity search
+  metaData          Json?        @default("{}")
+
+  @@map("messages")
+  @@index([conversationId])
+}
+
+model MessageFileReference {
+  id                String       @id @default(uuid())
+  message           Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  messageId         String
+  file              File         @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  fileId            String
+  snippet           String?      // Optional code snippet referenced
+  lineStart         Int?
+  lineEnd           Int?
+  createdAt         DateTime     @default(now())
+
+  @@unique([messageId, fileId])
+  @@map("message_file_references")
+}
+
+// Update the Task model to include a relation to Conversation
+model Task {
+  // Existing fields...
+  conversation      Conversation? @relation(fields: [conversationId], references: [id])
+  conversationId    String?
+
+  // Other existing fields and relations...
+}

@@ -1,0 +1,24 @@
+﻿// Add these fields to your File model in schema.prisma
+
+model File {
+  id                String       @id @default(uuid())
+  path              String
+  language          String?
+  lastModifiedAt    DateTime     @default(now())
+  content           String?      // Might be null for large files
+  contentHash       String?      // Hash of content for change detection
+  vector            Bytes?       // Embedding vector for similarity search
+  binaryRepresentation Bytes?    // Binary code representation
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  repository        Repository   @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  repositoryId      String
+  fileChanges       FileChange[]
+  messageReferences MessageFileReference[]
+  metaData          Json?        @default("{}")  // Store binary metadata here
+
+  @@unique([repositoryId, path])
+  @@map("files")
+  @@index([repositoryId])
+  @@index([language])
+}
